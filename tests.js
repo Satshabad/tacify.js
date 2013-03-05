@@ -1,5 +1,5 @@
 var jaspectcore = require("./core");
-var parse = require("./burrito");
+var parse = require("burrito");
 
 var privateFunctions = jaspectcore("").privateFunctions;
   

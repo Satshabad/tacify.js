@@ -40,3 +40,15 @@ exports.testTacify = function(test){
 };
 
 
+exports.testInsertBefore = function(test){
+  test.expect(1);
+  
+  var input1 = parse("callback();");
+	var input2 = parse("var x = obj.bar();");
+  var output = parse("callback();\
+  										var x = obj.bar();");
+    
+  test.equal(output, privateFunctions.insertBefore(input1, input2));
+  
+  test.done();
+};

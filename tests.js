@@ -52,3 +52,26 @@ exports.testInsertBefore = function(test){
   
   test.done();
 };
+
+
+exports.testInsertAfter = function(test){
+  test.expect(1);
+  
+  var input1 = parse("callback();");
+	var input2 = parse("var x = obj.bar();");
+  var output = parse("var x = obj.bar();\
+                      callback();");
+    
+  test.equal(output, privateFunctions.insertAfter(input1, input2));
+  
+  test.done();
+};
+
+
+
+
+
+
+
+
+

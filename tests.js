@@ -3,7 +3,9 @@ var burrito = require('burrito');
 var parse = burrito.parse;
 var deparse = burrito.deparse;
 
-var privateFunctions = jaspectcore("").privateFunctions;
+var privateFunctions = jaspectcore([]).privateFunctions;
+
+
   
 exports.testTacify = function(test){
   test.expect(6);

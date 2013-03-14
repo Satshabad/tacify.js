@@ -60,7 +60,10 @@ var tacifyNested = function(node){
         newCode.push(parseSingleStat("var "+ deparse(newVar) + " = " + deparse(call) + ";"));
         tempVarId++;
     }
-    newCode.push(node);
+
+    for (var i = 0; i < node.length; i++){
+      newCode.push(node[i]);
+    }
     return newCode;
 }
 

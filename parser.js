@@ -41,11 +41,9 @@ exports.deparse = function (ast) {
     if (typeof ast[0] === 'string'){
       ast = ['toplevel', [ast]]
     }else{
-      console.log("%j", ast)
       ast = ['toplevel', ast]
     }
   }
-  console.log("%j", ast)
   return uglify.uglify.gen_code(ast, { beautify : true });
 };
 

@@ -1,11 +1,12 @@
 var tacifyFunctions = require("../tacify").privateFunctions;
 var parser = require('../parser');
 var parse = parser.parse;
+var parseSingleStat = parser.parseSingleStat;
 var deparse = parser.deparse;
 
 
   
-exports.testTacify = function(test){
+exports.testNested = function(test){
   test.expect(4);
   
 	var input = parse("x = obj.bar().baz();");
@@ -39,3 +40,18 @@ exports.testTacify = function(test){
 
 };
 
+exports.testWhile = function(test){
+
+  test.expect(1);
+  
+	var input = parseSingleStat("while(foo() < 1){bar();}");
+  var output = parse("var __t0 = foo(); while(__t0 < 1){bar(); var __t0 = foo(); }");
+  var e = deparse(output);
+  var o = deparse(tacifyFunctions.tacifyWhile(input));
+  test.equal(e, o);
+  
+
+  test.done();
+
+
+}

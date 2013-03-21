@@ -42,9 +42,44 @@ var isNodeTypeOf = function(ast, type){
   return ast[0] == type;
 }
 
-// foo(bar())
-// t1 = bar()
-// foo(t1)
+var tacifyWhile = function (node) {
+
+  if (node.length == 0){
+    return node;
+  }
+    
+  var beforeLoopCode = [];
+  var endOfBlockCode = [];
+  var tempVarId = 0;
+  var conditional = node[1];
+
+  while(numberOfCalls(conditional) > 0){
+    newVar = parseSingleStat("__t"+tempVarId.toString())[1];
+    var call = replaceDeepestCall(conditional, newVar);
+
+    beforeLoopCode.push(parseSingleStat("var "+ deparse(newVar) + " = " + deparse(call) + ";"));
+    endOfBlockCode.push(parseSingleStat("var "+ deparse(newVar) + " = " + deparse(call) + ";"));
+
+    tempVarId++;
+  }
+
+  var block = node[2][1]
+
+  for (var i = 0; i < endOfBlockCode.length; i++) {
+    block.push(endOfBlockCode[i]);
+  }
+
+  var newCode = []
+
+  for (var i = 0; i < beforeLoopCode.length; i++) {
+    newCode.push(beforeLoopCode[i]);
+  } 
+
+  newCode.push(node);
+  //console.log(JSON.stringify(newCode));
+  return newCode;
+  
+};
 
 var tacifyNested = function(node){
     if (node.length == 0){
@@ -148,4 +183,4 @@ var replaceDeepestCall = function(tree, newVar){
 }
 
 
-exports.privateFunctions = { tacifyNested : tacifyNested };
+exports.privateFunctions = { tacifyNested : tacifyNested, tacifyWhile: tacifyWhile};

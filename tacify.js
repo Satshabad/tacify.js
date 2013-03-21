@@ -6,19 +6,36 @@ var deparse = parser.deparse;
 var tacify = exports.tacify = function(node){
  
   var inner = function(tree){
+
     if (typeof tree === 'string' || tree == null){
       return;
     } 
 
     for (var i = 0; i < tree.length; i ++){
+
       if (isNodeTypeOf(tree[i], 'var') || isNodeTypeOf(tree[i], 'stat')) {
         var newNodes = tacifyNested(tree[i]);
         tree.splice(i, 1); //remove old node
-        for (var j = 0; j < newNodes.length; j++){
-          tree.splice(i, 0, newNodes[j]);
-          i++;
-        }
+        spliceArrays(tree, newNodes, i);
+        i += newNodes.length;
       }
+
+      if (isNodeTypeOf(tree[i], 'while')) {
+        inner(tree[i][2]);
+        var newNodes = tacifyWhile(tree[i]);
+        tree.splice(i, 1); //remove old node
+        spliceArrays(tree, newNodes, i);
+        i += newNodes.length;
+      }
+
+      if (isNodeTypeOf(tree[i], 'for')) {
+        inner(tree[i][4]);
+        var newNodes = tacifyFor(tree[i]);
+        tree.splice(i, 1); //remove old node
+        spliceArrays(tree, newNodes, i);
+        i += newNodes.length;
+      }
+
       inner(tree[i]);
     }
 
@@ -29,6 +46,14 @@ var tacify = exports.tacify = function(node){
 
 }
 
+var spliceArrays = function (originalArray, toBeInserted, index) {
+
+        for (var j = 0; j < toBeInserted.length; j++){
+          originalArray.splice(index, 0, toBeInserted[j]);
+        }
+
+        return originalArray;
+};
 
 var isNodeTypeOf = function(ast, type){
   if (typeof ast === 'string' || ast == null){
@@ -54,7 +79,8 @@ var tacifyWhile = function (node) {
 
   while(numberOfCalls(conditional) > 0){
     newVar = parseSingleStat("__t"+tempVarId.toString())[1];
-    var call = replaceDeepestCall(conditional, newVar);
+    var call = findDeepestCall(conditional);
+    conditional = replaceDeepestCall(conditional, newVar);
 
     tempStatements.push(parseSingleStat("var "+ deparse(newVar) + " = " + deparse(call) + ";"));
 
@@ -91,7 +117,8 @@ var tacifyFor = function (node) {
   for (var i = 0; i < conditionals.length; i++) {
     while(numberOfCalls(conditionals[i]) > 0){
       newVar = parseSingleStat("__t"+tempVarId.toString())[1];
-      var call = replaceDeepestCall(conditionals[i], newVar);
+      var call = findDeepestCall(conditionals[i]);
+      conditionals[i] = replaceDeepestCall(conditionals[i], newVar);
 
       tempStatements.push(parseSingleStat("var "+ deparse(newVar) + " = " + deparse(call) + ";"));
 
@@ -128,7 +155,8 @@ var tacifyNested = function(node){
 
     while(numberOfCalls(node) > 1){
         newVar = parseSingleStat("__t"+tempVarId.toString())[1];
-        call = replaceDeepestCall(node, newVar);
+        var call = findDeepestCall(node);
+        node = replaceDeepestCall(node, newVar);
         newCode.push(parseSingleStat("var "+ deparse(newVar) + " = " + deparse(call) + ";"));
         tempVarId++;
     }
@@ -168,56 +196,96 @@ var numberOfCalls = function(tree){
 }
 
 var replaceDeepestCall = function(tree, newVar){
+  return replaceCall(tree, newVar, findDepthOfDeepestCall(tree))
+}
 
-  var ast = tree;
+var findDeepestCall = function(tree){
+  deepestCallDepth = findDepthOfDeepestCall(tree)
+
   var call = undefined;
-  var deepestCall = -1;
 
+  var findDeepestCall = function (tree, depth) {
 
-  var findDepth = function(tree, depth){
-
-    if (tree === null){
-      return;
+    if (typeof tree === 'string' || tree === null){
+      return false;
     }
-  
-    if (typeof tree === 'string'){
-      if (tree == "call"){
-          if (depth > deepestCall){
-              deepestCall = depth;
-          }
-      }
-      return;
-    }
-
+    
     for (var i = 0; i < tree.length; i++){
-      findDepth(tree[i], depth++);
-    }
-  }
-
-  var replaceCall = function(tree, depth){
-
-    if (tree === null){
-      return;
-    }
-  
-    if (typeof tree === 'string'){
-      return;
-    }
-
-    for (var i = 0; i < tree.length; i++){
-      if(isNodeTypeOf(tree[i], "call") && depth === deepestCall){
+      if(isNodeTypeOf(tree[i], "call") && depth+1 === deepestCallDepth){
         call = tree[i];
-        tree[i] = newVar;
+        return true;
       }
-      replaceCall(tree[i], depth++);
-    }
-  }
-  
 
-  findDepth(tree, 0);
-  replaceCall(tree, 0);
+      if (findDeepestCall(tree[i], depth + 1)){
+        break;
+      }
+
+    }
+  
+    return;
+
+  };
+  findDeepestCall(tree, 0);
   return call;
 }
 
+var findDepthOfDeepestCall = function(tree){
 
-exports.privateFunctions = { tacifyNested : tacifyNested, tacifyFor: tacifyFor, tacifyWhile: tacifyWhile};
+  var findDepthOfDeepestCall = function (tree, depth, deepest) {
+
+     if (tree === null){
+       return deepest;
+     }
+
+     if (typeof tree === 'string'){
+       if (tree == "call"){
+         if (depth > deepest){
+            deepest = depth-1;
+         }
+       }
+       return deepest;
+     }
+
+     var calldepths = []
+     for (var i = 0; i < tree.length; i++){
+      calldepths.push(findDepthOfDeepestCall(tree[i], depth + 1, deepest));
+     }
+     return Math.max.apply(null, calldepths);
+
+  };
+
+  return findDepthOfDeepestCall(tree, 0, -1);
+
+}
+
+
+var replaceCall = function(node, newVar, depthOfCall){
+
+  var replaceCall = function(tree, depth){
+    if (typeof tree === 'string' || tree === null){
+      return false;
+    }
+    
+    for (var i = 0; i < tree.length; i++){
+      if(isNodeTypeOf(tree[i], "call") && depth+1 === depthOfCall){
+        tree[i] = newVar;
+        return true;
+      }
+
+     if(replaceCall(tree[i], depth+1)){
+       break;
+     }
+
+    }
+
+  }
+  
+  replaceCall([node], -1);
+  return node;
+}
+
+
+exports.privateFunctions = { tacifyNested : tacifyNested, tacifyFor: tacifyFor, 
+                             tacifyWhile: tacifyWhile, replaceDeepestCall: replaceDeepestCall,
+                             findDepthOfDeepestCall: findDepthOfDeepestCall, findDeepestCall: findDeepestCall,
+                             replaceCall: replaceCall};

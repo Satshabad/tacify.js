@@ -78,6 +78,46 @@ var tacifyWhile = function (node) {
   
 };
 
+var tacifyFor = function (node) {
+
+  if (node.length == 0){
+    return node;
+  }
+    
+  var tempStatements = [];
+  var tempVarId = 0;
+  var conditionals = [node[1], node[2], node[3]];
+
+  for (var i = 0; i < conditionals.length; i++) {
+    while(numberOfCalls(conditionals[i]) > 0){
+      newVar = parseSingleStat("__t"+tempVarId.toString())[1];
+      var call = replaceDeepestCall(conditionals[i], newVar);
+
+      tempStatements.push(parseSingleStat("var "+ deparse(newVar) + " = " + deparse(call) + ";"));
+
+      tempVarId++;
+    }
+  }
+
+  var block = node[4][1]
+
+  for (var i = 0; i < tempStatements.length; i++) {
+    block.push(tempStatements[i]);
+  }
+
+  var newCode = []
+
+  for (var i = 0; i < tempStatements.length; i++) {
+    newCode.push(tempStatements[i]);
+  } 
+
+  newCode.push(node);
+  return newCode;
+  
+};
+
+
+
 var tacifyNested = function(node){
     if (node.length == 0){
       return node;
@@ -180,4 +220,4 @@ var replaceDeepestCall = function(tree, newVar){
 }
 
 
-exports.privateFunctions = { tacifyNested : tacifyNested, tacifyWhile: tacifyWhile};
+exports.privateFunctions = { tacifyNested : tacifyNested, tacifyFor: tacifyFor, tacifyWhile: tacifyWhile};

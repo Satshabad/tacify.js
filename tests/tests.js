@@ -55,3 +55,21 @@ exports.testWhile = function(test){
 
 
 }
+
+exports.testFor = function(test){
+
+  test.expect(1);
+  
+	var input = parseSingleStat("for(var i = bar();foo() < 1; i = baz()){x = 2;}");
+  var output = parse("var __t0 = bar(); var __t1 = foo(); var __t2 = baz(); \
+                      for(var i = __t0; __t1 < 1; i = __t2){ \
+                        x = 2; var __t0 = bar(); var __t1 = foo(); var __t2 = baz()}");
+  var e = deparse(output);
+  var o = deparse(tacifyFunctions.tacifyFor(input));
+  test.equal(e, o);
+  
+
+  test.done();
+
+
+}

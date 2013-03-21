@@ -48,8 +48,7 @@ var tacifyWhile = function (node) {
     return node;
   }
     
-  var beforeLoopCode = [];
-  var endOfBlockCode = [];
+  var tempStatements = [];
   var tempVarId = 0;
   var conditional = node[1];
 
@@ -57,26 +56,24 @@ var tacifyWhile = function (node) {
     newVar = parseSingleStat("__t"+tempVarId.toString())[1];
     var call = replaceDeepestCall(conditional, newVar);
 
-    beforeLoopCode.push(parseSingleStat("var "+ deparse(newVar) + " = " + deparse(call) + ";"));
-    endOfBlockCode.push(parseSingleStat("var "+ deparse(newVar) + " = " + deparse(call) + ";"));
+    tempStatements.push(parseSingleStat("var "+ deparse(newVar) + " = " + deparse(call) + ";"));
 
     tempVarId++;
   }
 
   var block = node[2][1]
 
-  for (var i = 0; i < endOfBlockCode.length; i++) {
-    block.push(endOfBlockCode[i]);
+  for (var i = 0; i < tempStatements.length; i++) {
+    block.push(tempStatements[i]);
   }
 
   var newCode = []
 
-  for (var i = 0; i < beforeLoopCode.length; i++) {
-    newCode.push(beforeLoopCode[i]);
+  for (var i = 0; i < tempStatements.length; i++) {
+    newCode.push(tempStatements[i]);
   } 
 
   newCode.push(node);
-  //console.log(JSON.stringify(newCode));
   return newCode;
   
 };

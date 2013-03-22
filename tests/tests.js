@@ -1,4 +1,13 @@
-var tacifyFunctions = require("../tacify").privateFunctions;
+var assert = require('assert');
+
+
+var replaceCall = require("../tacify").privateFunctions.replaceCall;
+var findDeepestCall = require("../tacify").privateFunctions.findDeepestCall;
+var replaceDeepestCall = require("../tacify").privateFunctions.replaceDeepestCall;
+var findDepthOfDeepestCall = require("../tacify").privateFunctions.findDepthOfDeepestCall;
+var tacifyNested = require("../tacify").privateFunctions.tacifyNested;
+var tacifyWhile = require("../tacify").privateFunctions.tacifyWhile;
+var tacifyFor = require("../tacify").privateFunctions.tacifyFor;
 var tacify = require("../tacify").tacify;
 var parser = require('../parser');
 var parse = parser.parse;
@@ -7,6 +16,56 @@ var deparse = parser.deparse;
 
 var heredoc = require('heredoc')
 
+suite("Helpers", function () {
+
+  test('replaceCall should replace call at specified level with new node', function () {
+
+    assert.deepEqual(replaceCall(parseSingleStat("foo().bar.baz();"), ["name", "__t0"], 4),
+                     parseSingleStat("__t0.bar.baz();"));
+
+  });
+
+  test('findDepthOfDeepestCall should return depth of deepest call node', function () {
+
+    assert.deepEqual(findDepthOfDeepestCall(parseSingleStat("foo().bar.baz();")), 4);
+
+  });
+
+  test('findDeepestCall should return the deepest call node', function () {
+
+    assert.deepEqual(findDeepestCall(parseSingleStat("foo().bar.baz();")),
+                     parseSingleStat("foo()")[1]);
+
+  });
+
+  suite("ReplaceDeepestCall", function () {
+
+    test('replaceDeepestCall should replace the deepest call node with the given one', function () {
+
+      assert.deepEqual(replaceDeepestCall(parseSingleStat("foo().bar.baz();") ,["name", "__t0"]), 
+                   parseSingleStat("__t0.bar.baz()"));
+
+    });
+
+    test('replaceDeepestCall should handle single call cases', function () {
+
+      assert.deepEqual(replaceDeepestCall(parseSingleStat("foo();") ,["name", "__t0"]), 
+                   parseSingleStat("__t0"));
+
+    });
+
+
+    test('replaceDeepestCall should handle proper order of arguments', function () {
+
+      assert.deepEqual(replaceDeepestCall(parseSingleStat("foo(baz(), x, bar())"),["name", "__t0"]), 
+                   parseSingleStat("foo(__t0, x, bar())"));
+
+    });
+   
+  });
+
+  
+});
 
 exports.testHelpers = function(test){
 

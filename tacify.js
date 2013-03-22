@@ -200,7 +200,7 @@ var replaceDeepestCall = function(tree, newVar){
 }
 
 var findDeepestCall = function(tree){
-  deepestCallDepth = findDepthOfDeepestCall(tree)
+  var deepestCallDepth = findDepthOfDeepestCall(tree)
 
   var call = undefined;
 

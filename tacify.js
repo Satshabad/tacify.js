@@ -78,7 +78,7 @@ var tacifyWhile = function (node) {
   var conditional = node[1];
 
   while(numberOfCalls(conditional) > 0){
-    newVar = parseSingleStat("__t"+tempVarId.toString())[1];
+    var newVar = parseSingleStat("__t"+tempVarId.toString())[1];
     var call = findDeepestCall(conditional);
     conditional = replaceDeepestCall(conditional, newVar);
 
@@ -116,7 +116,7 @@ var tacifyFor = function (node) {
 
   for (var i = 0; i < conditionals.length; i++) {
     while(numberOfCalls(conditionals[i]) > 0){
-      newVar = parseSingleStat("__t"+tempVarId.toString())[1];
+      var newVar = parseSingleStat("__t"+tempVarId.toString())[1];
       var call = findDeepestCall(conditionals[i]);
       conditionals[i] = replaceDeepestCall(conditionals[i], newVar);
 
@@ -150,11 +150,11 @@ var tacifyNested = function(node){
       return node;
     }
 
-    newCode = [];
-    tempVarId = 0;
+    var newCode = [];
+    var tempVarId = 0;
 
     while(numberOfCalls(node) > 1){
-        newVar = parseSingleStat("__t"+tempVarId.toString())[1];
+        var newVar = parseSingleStat("__t"+tempVarId.toString())[1];
         var call = findDeepestCall(node);
         node = replaceDeepestCall(node, newVar);
         newCode.push(parseSingleStat("var "+ deparse(newVar) + " = " + deparse(call) + ";"));
@@ -170,7 +170,7 @@ var tacifyNested = function(node){
 
 var numberOfCalls = function(tree){
 
-  callCount = 0;
+  var callCount = 0;
 
   var inner = function(tree){
   

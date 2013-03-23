@@ -13,10 +13,10 @@ var tacify = exports.tacify = function(node){
     for (var i = 0; i < tree.length; i ++){
 
       if (isNodeTypeOf(tree[i], 'var') || isNodeTypeOf(tree[i], 'stat')) {
-        var newNodes = tacifyNested(tree[i]);
+        var newNodes = tacifyStatement(tree[i]);
         tree.splice(i, 1); //remove old node
         spliceArrays(tree, newNodes, i);
-        i += newNodes.length;
+        i += newNodes.length -1;
       }
 
       if (isNodeTypeOf(tree[i], 'while')) {
@@ -24,7 +24,7 @@ var tacify = exports.tacify = function(node){
         var newNodes = tacifyWhile(tree[i]);
         tree.splice(i, 1); //remove old node
         spliceArrays(tree, newNodes, i);
-        i += newNodes.length;
+        i += newNodes.length -1;
       }
 
       if (isNodeTypeOf(tree[i], 'for')) {
@@ -32,7 +32,7 @@ var tacify = exports.tacify = function(node){
         var newNodes = tacifyFor(tree[i]);
         tree.splice(i, 1); //remove old node
         spliceArrays(tree, newNodes, i);
-        i += newNodes.length;
+        i += newNodes.length -1;
       }
 
       inner(tree[i]);
@@ -150,7 +150,7 @@ var tacifyFor = function (node) {
 
 
 
-var tacifyNested = function(node){
+var tacifyStatement = function(node){
     if (node.length == 0){
       return node;
     }
@@ -290,7 +290,7 @@ var replaceCall = function(node, newVar, depthOfCall){
 }
 
 
-exports.privateFunctions = { tacifyNested : tacifyNested, tacifyFor: tacifyFor, 
+exports.privateFunctions = { tacifyStatement : tacifyStatement, tacifyFor: tacifyFor, 
                              tacifyWhile: tacifyWhile, replaceDeepestCall: replaceDeepestCall,
                              findDepthOfDeepestCall: findDepthOfDeepestCall, findDeepestCall: findDeepestCall,
                              replaceCall: replaceCall, spliceArrays: spliceArrays};

@@ -6,7 +6,6 @@ var deparse = parser.deparse;
 var tacify = exports.tacify = function(node){
  
   var inner = function(tree){
-
     if (typeof tree === 'string' || tree == null){
       return;
     } 
@@ -50,6 +49,7 @@ var spliceArrays = function (originalArray, toBeInserted, index) {
 
         for (var j = 0; j < toBeInserted.length; j++){
           originalArray.splice(index, 0, toBeInserted[j]);
+          index++;
         }
 
         return originalArray;
@@ -86,7 +86,8 @@ var tacifyWhile = function (node) {
 
     tempVarId++;
   }
-
+  
+  node[1] = conditional;
   var block = node[2][1]
 
   for (var i = 0; i < tempStatements.length; i++) {
@@ -126,6 +127,10 @@ var tacifyFor = function (node) {
     }
   }
 
+  node[1] = conditionals[0];
+  node[2] = conditionals[1];
+  node[3] = conditionals[2];
+
   var block = node[4][1]
 
   for (var i = 0; i < tempStatements.length; i++) {
@@ -150,21 +155,21 @@ var tacifyNested = function(node){
       return node;
     }
 
-    var newCode = [];
+    var varStatements = [];
     var tempVarId = 0;
 
     while(numberOfCalls(node) > 1){
         var newVar = parseSingleStat("__t"+tempVarId.toString())[1];
         var call = findDeepestCall(node);
         node = replaceDeepestCall(node, newVar);
-        newCode.push(parseSingleStat("var "+ deparse(newVar) + " = " + deparse(call) + ";"));
+        varStatements.push(parseSingleStat("var "+ deparse(newVar) + " = " + deparse(call) + ";"));
         tempVarId++;
     }
+    
+    varStatements.push(node);
+    return varStatements;
 
-    for (var i = 0; i < node.length; i++){
-      newCode.push(node[i]);
-    }
-    return newCode;
+
 }
 
 
@@ -199,12 +204,12 @@ var replaceDeepestCall = function(tree, newVar){
   return replaceCall(tree, newVar, findDepthOfDeepestCall(tree))
 }
 
-var findDeepestCall = function(tree){
-  var deepestCallDepth = findDepthOfDeepestCall(tree)
+var findDeepestCall = function(node){
+  var deepestCallDepth = findDepthOfDeepestCall(node)
 
   var call = undefined;
 
-  var findDeepestCall = function (tree, depth) {
+  var findDeepestCallHelper = function (tree, depth) {
 
     if (typeof tree === 'string' || tree === null){
       return false;
@@ -216,16 +221,15 @@ var findDeepestCall = function(tree){
         return true;
       }
 
-      if (findDeepestCall(tree[i], depth + 1)){
+      if (findDeepestCallHelper(tree[i], depth + 1)){
         break;
       }
 
     }
   
-    return;
-
   };
-  findDeepestCall(tree, 0);
+
+  findDeepestCallHelper([node], -1);
   return call;
 }
 
@@ -262,6 +266,7 @@ var findDepthOfDeepestCall = function(tree){
 var replaceCall = function(node, newVar, depthOfCall){
 
   var replaceCall = function(tree, depth){
+
     if (typeof tree === 'string' || tree === null){
       return false;
     }
@@ -279,13 +284,13 @@ var replaceCall = function(node, newVar, depthOfCall){
     }
 
   }
-  
-  replaceCall([node], -1);
-  return node;
+  node = [node];
+  replaceCall(node, -1);
+  return node[0];
 }
 
 
 exports.privateFunctions = { tacifyNested : tacifyNested, tacifyFor: tacifyFor, 
                              tacifyWhile: tacifyWhile, replaceDeepestCall: replaceDeepestCall,
                              findDepthOfDeepestCall: findDepthOfDeepestCall, findDeepestCall: findDeepestCall,
-                             replaceCall: replaceCall};
+                             replaceCall: replaceCall, spliceArrays: spliceArrays};

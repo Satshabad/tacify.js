@@ -9,6 +9,7 @@ var findDepthOfDeepestCall = require("../tacify").privateFunctions.findDepthOfDe
 var tacifyStatement = require("../tacify").privateFunctions.tacifyStatement;
 var tacifyWhile = require("../tacify").privateFunctions.tacifyWhile;
 var tacifyFor = require("../tacify").privateFunctions.tacifyFor;
+var convertIfElseToIf = require("../tacify").privateFunctions.convertIfElseToIf;
 var tacify = require("../tacify").tacify;
 var parser = require('../parser');
 var parse = parser.parse;
@@ -146,6 +147,70 @@ suite("tacifyFor", function () {
                       for(var i = 0; __t0 < 1; i = __t2){ \
                         x = 2; var __t0 = foo(); var __t1 = baz(); var __t2 = __t1.bar(); }"));
   });
+
+});
+
+suite("convertIfElseToIf", function () {
+
+  test("should convert if else chain to nested ifs",function () {
+
+    var input = parseSingleStat(heredoc(function () {/*
+
+      if (foo()) {
+        x = 3;
+        } else if (bar()) {
+          x = 4;
+        } else {
+          x = 5;
+      }
+      
+   */ }));
+
+    var expected = parseSingleStat(heredoc(function () {/*
+
+      if (!foo()) {
+        if (!bar()){
+          x = 5;
+          } else {
+            x = 4;
+          }
+        } else {
+          x = 3;
+      }
+      
+    */}));
+
+    assert.deepEqual(convertIfElseToIf(input), expected)
+  });
+  
+  test("should convert if else chain to nested ifs, even when no trailing else",function () {
+
+    var input = parseSingleStat(heredoc(function () {/*
+
+      if (foo()) {
+        x = 3;
+        } else if (bar()) {
+          x = 4;
+        }      
+   */ }));
+
+    var expected = parseSingleStat(heredoc(function () {/*
+
+      if (!foo()) {
+        if (!bar()){
+          } else {
+            x = 4;
+          }
+        } else {
+          x = 3;
+      }
+      
+    */}));
+
+    assert.deepEqual(convertIfElseToIf(input), expected)
+  });
+
+
 
 });
 

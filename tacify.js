@@ -67,6 +67,48 @@ var isNodeTypeOf = function(ast, type){
   return ast[0] == type;
 }
 
+var tacifyIf = function (node) {
+  
+};
+
+var convertIfElseToIf = function (node) {
+
+
+ var inner =  function(node) {
+
+    if (node[3] === undefined){
+      node[1] = ["unary-prefix","!", node[1]];
+      node[3] = node[2];
+      node[2] = ['block', []];
+      return;
+    }
+
+    if (isNodeTypeOf(node[3], 'block')) {
+
+      node[1] = ["unary-prefix","!", node[1]];
+      var temp = node[3];
+      node[3] = node[2];
+      node[2] = temp;
+      return;
+    }
+
+    if (isNodeTypeOf(node[3], 'if')){
+
+      node[1] = ["unary-prefix","!", node[1]];
+      var nextif = node[3];
+      node[3] = node[2];
+      node[2] = ['block', [nextif]];
+      inner(node[2][1][0]);
+
+    }
+
+  };
+
+  inner(node);
+  return node;
+
+};
+
 var tacifyWhile = function (node) {
 
   if (node.length == 0){
@@ -293,4 +335,4 @@ var replaceCall = function(node, newVar, depthOfCall){
 exports.privateFunctions = { tacifyStatement : tacifyStatement, tacifyFor: tacifyFor, 
                              tacifyWhile: tacifyWhile, replaceDeepestCall: replaceDeepestCall,
                              findDepthOfDeepestCall: findDepthOfDeepestCall, findDeepestCall: findDeepestCall,
-                             replaceCall: replaceCall, spliceArrays: spliceArrays};
+                             replaceCall: replaceCall, spliceArrays: spliceArrays, convertIfElseToIf: convertIfElseToIf};

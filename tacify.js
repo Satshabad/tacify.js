@@ -344,4 +344,4 @@ var replaceCall = function(node, newVar, depthOfCall){
 exports.privateFunctions = { tacifyStatement : tacifyStatement, tacifyFor: tacifyFor, 
                              tacifyWhile: tacifyWhile, replaceDeepestCall: replaceDeepestCall,
                              findDepthOfDeepestCall: findDepthOfDeepestCall, findDeepestCall: findDeepestCall,
-                             replaceCall: replaceCall, spliceArrays: spliceArrays, convertIfElseToIf: convertIfElseToIf};
+                             replaceCall: replaceCall, spliceArrays: spliceArrays, convertIfElseToIf: convertIfElseToIf, isNodeTypeOf: isNodeTypeOf, numberOfCalls: numberOfCalls};

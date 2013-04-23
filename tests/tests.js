@@ -10,6 +10,8 @@ var tacifyStatement = require("../tacify").privateFunctions.tacifyStatement;
 var tacifyWhile = require("../tacify").privateFunctions.tacifyWhile;
 var tacifyFor = require("../tacify").privateFunctions.tacifyFor;
 var convertIfElseToIf = require("../tacify").privateFunctions.convertIfElseToIf;
+var isNodeTypeOf = require("../tacify").privateFunctions.isNodeTypeOf;
+var numberOfCalls = require("../tacify").privateFunctions.numberOfCalls;
 var tacify = require("../tacify").tacify;
 var parser = require('../parser');
 var parse = parser.parse;
@@ -17,6 +19,157 @@ var parseSingleStat = parser.parseSingleStat;
 var deparse = parser.deparse;
 
 var heredoc = require('heredoc')
+
+var isTacified = function (node) {
+  for (var i = 0, l = node.length; i < l; i ++) {
+    var statement = node[i];
+
+    if (isNodeTypeOf(node[i], 'stat')){
+
+      return numberOfCalls(node[i]) <= 1;
+
+    }
+
+    if(isNodeTypeOf(node[i], 'var')){
+      if (node[i][1].length > 1){
+        return false;
+      }
+
+      if (node[i][1].length == 1){
+        return numberOfCalls(node[i]) <= 1;
+      }
+    }
+      
+    if (isNodeTypeOf(node[i], 'if')){
+
+      if (numberOfCalls(node[i][1]) <= 1){
+        return false;
+      }
+      
+      // and if-else is not in tac form
+      if (isNodeTypeOf(node[i][3], 'if')){
+        return false;
+      }
+
+      return isTacified(node[i][2]) && isTacified(node[i][3])
+
+    } 
+
+
+    if (isNodeTypeOf(node[i], 'for')){
+
+      if (numberOfCalls(node[i][1]) <= 1){
+        return false;
+      }
+
+      if (numberOfCalls(node[i][2]) <= 1){
+        return false;
+      }
+
+      if (numberOfCalls(node[i][3]) <= 1){
+        return false;
+      }
+
+      return isTacified(node[i][4]) 
+    }
+
+    if (isNodeTypeOf(node[i], 'while')){
+
+      if (numberOfCalls(node[i][1]) <= 1){
+        return false;
+      }
+
+      return isTacified(node[i][2]) 
+    }
+    
+  }
+  
+};
+
+
+suite("isTacifyed (test of a test helper)", function () {
+
+  test('should verify that ifs are tacified', function () {
+
+    var input = parse(heredoc(function () {/*
+       var __t0 = foo();
+       if (__t0 || bar()) {
+          x = 3;
+        } 
+    */}));
+    assert.ok(isTacified(input))
+
+
+  });
+
+  test('should verify that fors are tacified', function () {
+
+    var input = parse(heredoc(function () {/*
+        var __t0 = foo(); var __t1 = baz(); var __t2 = __t1.bar();
+        for(var i = 0; __t0 < 1; i = __t2){
+          x = 2;
+          var __t0 = foo(); 
+          var __t1 = baz(); 
+          var __t2 = __t1.bar();
+        }
+    */}));
+    assert.ok(isTacified(input))
+
+
+  });
+
+  test('should verify that whiles are tacified', function () {
+
+    var input = parse(heredoc(function () {/*
+      var __t0 = foo(); 
+      while(__t0 < 1){
+        bar(); 
+        var __t0 = foo(); 
+        }
+    */}));
+    assert.ok(isTacified(input))
+
+
+  });
+
+ test('should verify that if-else are NOT tacified', function () {
+
+    var input = parse(heredoc(function () {/*
+
+    if (foo()){
+    } else if (bar()){
+    }
+    */}));
+    assert.ok(!isTacified(input))
+  });
+
+  test('should verify that nested calls are NOT tacified', function () {
+
+    var input = parse(heredoc(function () {/*
+      x = foo(bar())
+    */}));
+    assert.ok(!isTacified(input))
+  });
+
+  test('should verify that multiple vars are NOT tacified', function () {
+
+    var input = parse(heredoc(function () {/*
+      var x=3, y = 4;
+    */}));
+    assert.ok(!isTacified(input))
+  });
+
+ test('should verify that single stats are tacified', function () {
+
+    var input = parse(heredoc(function () {/*
+      var x=3;
+    */}));
+    assert.ok(isTacified(input))
+  });
+
+
+
+});
 
 suite("Helpers", function () {
 

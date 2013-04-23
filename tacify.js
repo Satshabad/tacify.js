@@ -35,6 +35,20 @@ var tacify = exports.tacify = function(node){
         i += newNodes.length -1;
       }
 
+      if(isNodeTypeOf(tree[i], 'if')){
+        if (isNodeTypeOf(tree[i][3], 'if')){
+          tree[i] = convertIfElseToIf(tree[i]);
+        }
+
+        var newNodes = tacifyStatement(tree[i]);
+        tree.splice(i, 1); //remove old node
+        spliceArrays(tree, newNodes, i);
+        i += newNodes.length -1;
+        inner(tree[i][2])
+        inner(tree[i][3])
+
+      }
+
       inner(tree[i]);
     }
 
@@ -67,12 +81,7 @@ var isNodeTypeOf = function(ast, type){
   return ast[0] == type;
 }
 
-var tacifyIf = function (node) {
-  
-};
-
 var convertIfElseToIf = function (node) {
-
 
  var inner =  function(node) {
 
@@ -221,7 +230,7 @@ var numberOfCalls = function(tree){
 
   var inner = function(tree){
   
-    if (tree === null){
+    if (tree === null || tree === undefined){
       return;
     }
   
@@ -279,7 +288,7 @@ var findDepthOfDeepestCall = function(tree){
 
   var findDepthOfDeepestCall = function (tree, depth, deepest) {
 
-     if (tree === null){
+     if (tree === null || tree == undefined){
        return deepest;
      }
 

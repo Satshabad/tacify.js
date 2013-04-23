@@ -150,10 +150,32 @@ suite("tacifyFor", function () {
 
 });
 
+suite("tacifyIf", function () {
+
+  test("should tacify ifs with more than 1 call in cond expression",function () {
+    var input = parse(heredoc(function () {/*
+
+      if (foo() || bar()) {
+        x = 3;
+      } 
+      
+   */ }));
+
+    var expected = parse(heredoc(function () {/*
+       var __t0 = foo();
+       if (__t0 || bar()) {
+          x = 3;
+        } 
+    */}));
+    assert.deepEqual(tacify(input), expected)
+
+ });
+
+});
 suite("convertIfElseToIf", function () {
 
-  test("should convert if else chain to nested ifs",function () {
-
+ test("should convert if else chain to nested ifs",function () {
+ 
     var input = parseSingleStat(heredoc(function () {/*
 
       if (foo()) {

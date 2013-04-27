@@ -18,7 +18,38 @@ var parse = parser.parse;
 var parseSingleStat = parser.parseSingleStat;
 var deparse = parser.deparse;
 
-var heredoc = require('heredoc')
+var heredoc = require('heredoc');
+var vm = require('vm');
+
+var isEquivalentCode = function (beforeCode, afterCode) {
+  var beforeContext = vm.createContext({});
+  var afterContext = vm.createContext({});
+  vm.runInContext(beforeCode, beforeContext);
+  vm.runInContext(afterCode, afterContext);
+
+  for (var prop in beforeContext){
+
+    if (!(prop.toString() in afterContext) || afterContext.prop !== beforeContext.prop){
+      return false;
+    }
+  }
+
+  return true;
+  
+};
+
+suite("isEquivalentCode (test of a test helper)", function () {
+
+  test('should verify that the same code is equivalent', function () {
+
+    assert.ok(isEquivalentCode('x=2', 'x=2'));
+
+
+  });
+
+});
+
+
 
 var isTacified = function (node) {
   for (var i = 0, l = node.length; i < l; i ++) {
@@ -166,8 +197,6 @@ suite("isTacifyed (test of a test helper)", function () {
     */}));
     assert.ok(isTacified(input))
   });
-
-
 
 });
 
@@ -390,7 +419,7 @@ suite("convertIfElseToIf", function () {
 });
 
 suite("tacify", function () {
-  test("tacify should work with a for nested in a while", function () {
+  test("should work with a for nested in a while", function () {
 
    var input = parse(heredoc(function () {/*
                       while(foo()){
@@ -417,7 +446,7 @@ suite("tacify", function () {
 
   });
 
-  test("tacify should work with multiple statements ", function () {
+  test("should work with multiple statements ", function () {
 
    var input = parse(heredoc(function () {/*
 	                      w = 3;
@@ -439,7 +468,7 @@ suite("tacify", function () {
   });
 
 
-  test("tacify should work with a while nested in a for", function () {
+  test("should work with a while nested in a for", function () {
 
    var input = parse(heredoc(function () {/*
                         for(var i = 1; i < foo(); i = {x: bar()}){

@@ -1,0 +1,29 @@
+{
+  "name": "tacify.js",
+  "version": "0.1.0",
+  "description": "A three address code compiler for javascript",
+  "main": "tacify.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "mocha tests/tests.js -u tdd -R spec -w -t 100"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/Satshabad/jaspect.git"
+  },
+  "keywords": [
+    "three",
+    "address",
+    "code",
+    "compiler"
+  ],
+  "author": "Satshabad Khalsa",
+  "license": "MIT",
+  "gitHead": "729672520ce1ba2a686a91c49fdd9a186f6f98f8",
+  "dependencies": {
+    "heredoc": "~1.1.0",
+    "uglify-js": "~1.1.1"
+  }
+}

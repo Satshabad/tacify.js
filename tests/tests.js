@@ -94,80 +94,75 @@ var isTacified = function (node) {
   var isTacified = true;
 
   var inner = function (node) {
+
     if (node === undefined || node === null || 
          typeof node === "number" || typeof node === "boolean" || 
          typeof node === "string"){
       return;
     }
 
-    for (var i = 0, l = node.length; i < l; i ++) {
-      if (isNodeTypeOf(node[i], 'stat')){
+    if (isNodeTypeOf(node, 'stat')){
 
-        if (numberOfCalls(node[i]) > 1){
-          isTacified = false;
-        }
-
+      if (numberOfCalls(node) > 1){
+        isTacified = false;
       }
 
-      if(isNodeTypeOf(node[i], 'var')){
-        if (node[i][1].length > 1){
-          isTacified = false;
-        }
-
-        if (node[i][1].length == 1){
-          if (numberOfCalls(node[i]) > 1){
-          isTacified = false;
-          }
-        }
-      }
-        
-      if (isNodeTypeOf(node[i], 'if')){
-
-        if (numberOfCalls(node[i][1]) > 1){
-          isTacified = false;
-        }
-        
-        // and if-else is not in tac form
-        if (isNodeTypeOf(node[i][3], 'if')){
-          isTacified = false;
-        }
-
-
-        inner(node[i][2]);
-        inner(node[i][3]);
-
-      } 
-
-
-      if (isNodeTypeOf(node[i], 'for')){
-
-        if (numberOfCalls(node[i][1]) > 0){
-          isTacified = false;
-        }
-
-        if (numberOfCalls(node[i][2]) > 0){
-          isTacified = false;
-        }
-
-        if (numberOfCalls(node[i][3]) > 0){
-          isTacified = false;
-        }
-
-        inner(node[i][4]) 
-      }
-
-      if (isNodeTypeOf(node[i], 'while')){
-
-        if (numberOfCalls(node[i][1]) > 0){
-          isTacified = false;
-        }
-
-        inner(node[i][2]) 
-      }
-
-     inner(node[i])
-      
     }
+
+    if(isNodeTypeOf(node, 'var')){
+
+      if (numberOfCalls(node) > 1){
+        isTacified = false;
+      }
+    }
+      
+    if (isNodeTypeOf(node, 'if')){
+
+      if (numberOfCalls(node[1]) > 1){
+        isTacified = false;
+      }
+      
+      // and if-else is not in tac form
+      if (isNodeTypeOf(node[3], 'if')){
+        isTacified = false;
+      }
+
+
+      inner(node[2]);
+      inner(node[3]);
+
+    } 
+
+    if (isNodeTypeOf(node, 'for')){
+
+      if (numberOfCalls(node[1]) > 0){
+        isTacified = false;
+      }
+
+      if (numberOfCalls(node[2]) > 0){
+        isTacified = false;
+      }
+
+      if (numberOfCalls(node[3]) > 0){
+        isTacified = false;
+      }
+
+      inner(node[4]) 
+    }
+
+    if (isNodeTypeOf(node, 'while')){
+
+      if (numberOfCalls(node[1]) > 0){
+        isTacified = false;
+      }
+
+      inner(node[2]) 
+    }
+
+    for (var i = 0, l = node.length; i < l; i ++) {
+     inner(node[i])
+    }
+
   }  
 
   inner(node);
@@ -286,17 +281,9 @@ suite("isTacifyed (test of a test helper)", function () {
     assert.ok(!isTacified(input))
   });
 
-  test('should verify that multiple vars are NOT tacified', function () {
-
-    var input = parse(heredoc(function () {/*
-      var x=3, y = 4;
-    */}));
-    assert.ok(!isTacified(input))
-  });
-
  test('should verify that single stats are tacified', function () {
 
-    var input = parse(heredoc(function () {/*
+      var input = parse(heredoc(function () {/*
       var x=3;
     */}));
     assert.ok(isTacified(input))
@@ -486,13 +473,28 @@ suite("tacifyIf", function () {
       } 
       
    */ });
-    var result = tacify(parseSingleStat(input));
+    var result = tacify(parse(input));
     assert.ok(isTacified(result));
     assert.ok(isEquivalentCodeWithContext(input, deparse(result), context));
 
  });
 
 });
+
+suite("tacifySequence", function () {
+
+  test("should tacify multiple vars in sequence",function () {
+    
+    var context = {bar : function(){return 3}, foo: function(){ return 4}}
+    var input = "x = foo(), bar() ";
+    var result = tacify(parse(input));
+    assert.ok(isTacified(result));
+    assert.ok(isEquivalentCodeWithContext(input, deparse(result), context));
+
+  });
+ 
+});
+ 
 
 suite("convertIfElseToIf", function () {
 

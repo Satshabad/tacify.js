@@ -162,40 +162,72 @@ var tacifyFor = function (node) {
     return node;
   }
     
-  var tempStatements = [];
+  var declarationStatements = [];
+  var conditionalStatements = [];
+  var incrementalStatements = [];
   var tempVarId = 0;
   var conditionals = [node[1], node[2], node[3]];
 
-  for (var i = 0; i < conditionals.length; i++) {
-    while(numberOfCalls(conditionals[i]) > 0){
-      var newVar = parseSingleStat("__t"+tempVarId.toString())[1];
-      var call = findDeepestCall(conditionals[i]);
-      conditionals[i] = replaceDeepestCall(conditionals[i], newVar);
+  while(numberOfCalls(conditionals[0]) > 0){
+    var newVar = parseSingleStat("__t"+tempVarId.toString())[1];
+    var call = findDeepestCall(conditionals[0]);
+    conditionals[0] = replaceDeepestCall(conditionals[0], newVar);
 
-      tempStatements.push(parseSingleStat("var "+ deparse(newVar) + " = " + deparse(call) + ";"));
+    declarationStatements.push(parseSingleStat("var "+ deparse(newVar) + " = " + deparse(call) + ";"));
 
-      tempVarId++;
-    }
+    tempVarId++;
   }
+
+  while(numberOfCalls(conditionals[1]) > 0){
+    var newVar = parseSingleStat("__t"+tempVarId.toString())[1];
+    var call = findDeepestCall(conditionals[1]);
+    conditionals[1] = replaceDeepestCall(conditionals[1], newVar);
+
+    conditionalStatements.push(parseSingleStat("var "+ deparse(newVar) + " = " + deparse(call) + ";"));
+
+    tempVarId++;
+  }
+  
+  while(numberOfCalls(conditionals[2]) > 0){
+    var newVar = parseSingleStat("__t"+tempVarId.toString())[1];
+    var call = findDeepestCall(conditionals[2]);
+    conditionals[2] = replaceDeepestCall(conditionals[2], newVar);
+
+    incrementalStatements.push(parseSingleStat("var "+ deparse(newVar) + " = " + deparse(call) + ";"));
+
+    tempVarId++;
+  }
+
+
 
   node[1] = conditionals[0];
   node[2] = conditionals[1];
   node[3] = conditionals[2];
 
+
   var block = node[4][1]
 
-  for (var i = 0; i < tempStatements.length; i++) {
-    block.push(tempStatements[i]);
+  for (var i = 0; i < conditionalStatements.length; i++) {
+    block.push(conditionalStatements[i]);
+  }
+
+  for (var i = 0; i < incrementalStatements.length; i++) {
+    block.push(incrementalStatements[i]);
   }
 
   var newCode = []
 
-  for (var i = 0; i < tempStatements.length; i++) {
-    newCode.push(tempStatements[i]);
+  for (var i = 0; i < declarationStatements.length; i++) {
+    newCode.push(declarationStatements[i]);
+  } 
+
+  for (var i = 0; i < conditionalStatements.length; i++) {
+    newCode.push(conditionalStatements[i]);
   } 
 
   newCode.push(node);
   return newCode;
+
   
 };
 

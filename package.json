@@ -1,6 +1,6 @@
 {
   "name": "tacify.js",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A three address code compiler for javascript",
   "main": "tacify.js",
   "directories": {

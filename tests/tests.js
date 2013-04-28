@@ -12,6 +12,7 @@ var tacifyFor = require("../tacify").privateFunctions.tacifyFor;
 var convertIfElseToIf = require("../tacify").privateFunctions.convertIfElseToIf;
 var isNodeTypeOf = require("../tacify").privateFunctions.isNodeTypeOf;
 var numberOfCalls = require("../tacify").privateFunctions.numberOfCalls;
+var convertSwitchToIfs = require("../tacify").privateFunctions.convertSwitchToIfs;
 var tacify = require("../tacify").tacify;
 var parser = require('../parser');
 var parse = parser.parse;
@@ -555,5 +556,58 @@ suite("convertIfElseToIf", function () {
 
     assert.deepEqual(convertIfElseToIf(input), expected)
   });
+
+
+});
+
+
+
+
+suite("convertSwitchToIfs", function () {
+
+  test("should convert switch to string of ifs",function () {
+    var input = parseSingleStat(heredoc(function () {/*
+      switch(x){
+        case 1:
+          foo()
+        case 2:
+          bar()
+          break;
+        case 3:
+          baz()
+        default:
+          bing()
+      }
+          
+   */ }));
+
+    var expected = parseSingleStat(heredoc(function () {/*
+
+      for(var ___inc = 0; ___inc < 1; ___inc++){
+        var ___matchFound = false;
+        if(___matchFound || x === 1){
+          ___matchFound = true
+          foo()
+        }
+
+        if(___matchFound || x === 2){
+          ___matchFound = true
+          bar()
+          break;
+        }
+
+        if(___matchFound || x === 3){
+          ___matchFound = true
+          baz()
+        }
+
+        bing()
+
+      }
+    */}));
+
+    assert.deepEqual(convertSwitchToIfs(input), expected)
+  });
+
 
 });

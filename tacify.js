@@ -81,6 +81,35 @@ var isNodeTypeOf = function(ast, type){
   return ast[0] == type;
 }
 
+var convertSwitchToIfs = function (node) {
+  
+  var newNode = []
+
+  var target = node[1];
+  var cases = node[2];
+
+  var code = 'for(var ___inc=0;___inc<1;___inc++){var ___matchFound = false;\n';
+
+  for (var i = 0, l = cases.length; i < l; i ++) {
+    var value = cases[i][0];
+    var block = cases[i][1];
+
+    if(cases[i][0] === null){
+      
+      var caseCode = deparse(block)+'\n'
+    } else{
+      var caseCode = 'if(___matchFound || '+deparse(target)+'==='+deparse(value)
+                    +'){___matchFound = true;\n'+ deparse(block)+'}\n'
+    }
+    
+    code = code + caseCode;
+  }
+    code += '\n}'
+
+    return parseSingleStat(code);
+};
+
+
 var convertIfElseToIf = function (node) {
 
  var inner =  function(node) {
@@ -376,4 +405,4 @@ var replaceCall = function(node, newVar, depthOfCall){
 exports.privateFunctions = { tacifyStatement : tacifyStatement, tacifyFor: tacifyFor, 
                              tacifyWhile: tacifyWhile, replaceDeepestCall: replaceDeepestCall,
                              findDepthOfDeepestCall: findDepthOfDeepestCall, findDeepestCall: findDeepestCall,
-                             replaceCall: replaceCall, spliceArrays: spliceArrays, convertIfElseToIf: convertIfElseToIf, isNodeTypeOf: isNodeTypeOf, numberOfCalls: numberOfCalls};
+                             replaceCall: replaceCall, spliceArrays: spliceArrays, convertIfElseToIf: convertIfElseToIf, isNodeTypeOf: isNodeTypeOf, numberOfCalls: numberOfCalls, convertSwitchToIfs: convertSwitchToIfs};

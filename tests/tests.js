@@ -563,9 +563,30 @@ suite("convertIfElseToIf", function () {
 
 
 
-suite("convertSwitchToIfs", function () {
+suite("Switch Statements", function () {
 
-  test("should convert switch to string of ifs",function () {
+
+  test("tacify should work on switch statements",function () {
+    
+    var context = {bar : function(){return 2}, foo: function(){ return 2}, baz: function(x){return x}}
+    var input = heredoc(function () {/*
+      switch(foo()){
+        case 1:
+          foo()
+        case baz(bar()):
+          bar()
+        case 3:
+          baz()
+      }
+          
+   */ })
+    var result = tacify(parse(input));
+    assert.ok(isTacified(result));
+    assert.ok(isEquivalentCodeWithContext(input, deparse(result), context));
+
+  });
+
+  test("convertSwitchToIfs should convert switch to string of ifs",function () {
     var input = parseSingleStat(heredoc(function () {/*
       switch(x){
         case 1:
@@ -585,18 +606,19 @@ suite("convertSwitchToIfs", function () {
 
       for(var ___inc = 0; ___inc < 1; ___inc++){
         var ___matchFound = false;
-        if(___matchFound || x === 1){
+        var ___target = x;
+        if(___matchFound || ___target === 1){
           ___matchFound = true
           foo()
         }
 
-        if(___matchFound || x === 2){
+        if(___matchFound || ___target === 2){
           ___matchFound = true
           bar()
           break;
         }
 
-        if(___matchFound || x === 3){
+        if(___matchFound || ___target === 3){
           ___matchFound = true
           baz()
         }

@@ -27,6 +27,12 @@ var tacify = exports.tacify = function(node){
         i += newNodes.length -1;
       }
 
+      if (isNodeTypeOf(tree[i], 'switch')) {
+        var newNode = convertSwitchToIfs(tree[i]);
+        tree.splice(i, 1, newNode); //remove old node, and add new one
+        inner(tree[i]);
+      }
+
       if (isNodeTypeOf(tree[i], 'for')) {
         inner(tree[i][4]);
         var newNodes = tacifyFor(tree[i]);
@@ -39,7 +45,6 @@ var tacify = exports.tacify = function(node){
         if (isNodeTypeOf(tree[i][3], 'if')){
           tree[i] = convertIfElseToIf(tree[i]);
         }
-
         var newNodes = tacifyStatement(tree[i]);
         tree.splice(i, 1); //remove old node
         spliceArrays(tree, newNodes, i);
@@ -88,7 +93,7 @@ var convertSwitchToIfs = function (node) {
   var target = node[1];
   var cases = node[2];
 
-  var code = 'for(var ___inc=0;___inc<1;___inc++){var ___matchFound = false;\n';
+  var code = 'for(var ___inc=0;___inc<1;___inc++){var ___matchFound = false;\nvar ___target= '+deparse(target)+';\n';
 
   for (var i = 0, l = cases.length; i < l; i ++) {
     var value = cases[i][0];
@@ -98,7 +103,7 @@ var convertSwitchToIfs = function (node) {
       
       var caseCode = deparse(block)+'\n'
     } else{
-      var caseCode = 'if(___matchFound || '+deparse(target)+'==='+deparse(value)
+      var caseCode = 'if(___matchFound || ___target ==='+deparse(value)
                     +'){___matchFound = true;\n'+ deparse(block)+'}\n'
     }
     
@@ -323,7 +328,7 @@ var findDeepestCall = function(node){
 
   var findDeepestCallHelper = function (tree, depth) {
 
-    if (typeof tree === 'string' || tree === null){
+    if (typeof tree === 'string' || tree === null || tree === undefined){
       return false;
     }
     
@@ -379,7 +384,7 @@ var replaceCall = function(node, newVar, depthOfCall){
 
   var replaceCall = function(tree, depth){
 
-    if (typeof tree === 'string' || tree === null){
+    if (typeof tree === 'string' || tree === null || tree === undefined){
       return false;
     }
     

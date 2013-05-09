@@ -162,15 +162,16 @@ var tacifyWhile = function (node) {
   var tempVarId = 0;
   var conditional = node[1];
 
-  while(numberOfCalls(conditional) > 0){
+  var paths = collectPaths(conditional, ['call'])
+
+  for (var i = 0, l = paths.length; i < l; i ++) {
     var newVar = parseSingleStat("__t"+tempVarId.toString())[1];
-    var call = findDeepestCall(conditional);
-    conditional = replaceDeepestCall(conditional, newVar);
-
+    var extractedNode = getNodeAtPath(conditional, paths[i]);
+    conditional = setNodeAtPathTo(conditional, paths[i], newVar);
     tempStatements.push(parseSingleStat("var "+ deparse(newVar) + " = " + deparse(call) + ";"));
-
     tempVarId++;
   }
+
   
   node[1] = conditional;
   var block = node[2][1]
@@ -202,37 +203,38 @@ var tacifyFor = function (node) {
   var tempVarId = 0;
   var conditionals = [node[1], node[2], node[3]];
 
-  while(numberOfCalls(conditionals[0]) > 0){
+  var paths = collectPaths(conditionals[0], ['call'])
+
+  for (var i = 0, l = paths.length; i < l; i ++) {
     var newVar = parseSingleStat("__t"+tempVarId.toString())[1];
-    var call = findDeepestCall(conditionals[0]);
-    conditionals[0] = replaceDeepestCall(conditionals[0], newVar);
-
-    declarationStatements.push(parseSingleStat("var "+ deparse(newVar) + " = " + deparse(call) + ";"));
-
+    var extractedNode = getNodeAtPath(conditionals[0], paths[i]);
+    conditionals[0] = setNodeAtPathTo(conditionals[0], paths[i], newVar);
+    declarationStatements.push(parseSingleStat("var "+ deparse(newVar) + " = " + deparse(extractedNode) + ";"));
     tempVarId++;
   }
 
-  while(numberOfCalls(conditionals[1]) > 0){
+  paths = collectPaths(conditionals[1], ['call'])
+
+  for (var i = 0, l = paths.length; i < l; i ++) {
     var newVar = parseSingleStat("__t"+tempVarId.toString())[1];
-    var call = findDeepestCall(conditionals[1]);
-    conditionals[1] = replaceDeepestCall(conditionals[1], newVar);
-
-    conditionalStatements.push(parseSingleStat("var "+ deparse(newVar) + " = " + deparse(call) + ";"));
-
+    var extractedNode = getNodeAtPath(conditionals[1], paths[i]);
+    conditionals[1] = setNodeAtPathTo(conditionals[1], paths[i], newVar);
+    conditionalStatements.push(parseSingleStat("var "+ deparse(newVar) + " = " + deparse(extractedNode) + ";"));
     tempVarId++;
-  }
-  
-  while(numberOfCalls(conditionals[2]) > 0){
-    var newVar = parseSingleStat("__t"+tempVarId.toString())[1];
-    var call = findDeepestCall(conditionals[2]);
-    conditionals[2] = replaceDeepestCall(conditionals[2], newVar);
 
-    incrementalStatements.push(parseSingleStat("var "+ deparse(newVar) + " = " + deparse(call) + ";"));
-
-    tempVarId++;
   }
 
+  paths = collectPaths(conditionals[2], ['call'])
 
+  for (var i = 0, l = paths.length; i < l; i ++) {
+    var newVar = parseSingleStat("__t"+tempVarId.toString())[1];
+    var extractedNode = getNodeAtPath(conditionals[2], paths[i]);
+    conditionals[2] =  setNodeAtPathTo(conditionals[2], paths[i], newVar);
+    incrementalStatements.push(parseSingleStat("var "+ deparse(newVar) + " = " + deparse(extractedNode) + ";"));
+    tempVarId++;
+
+  }
+ 
 
   node[1] = conditionals[0];
   node[2] = conditionals[1];
@@ -275,20 +277,104 @@ var tacifyStatement = function(node){
     var varStatements = [];
     var tempVarId = 0;
 
-    while(numberOfCalls(node) > 1){
-        var newVar = parseSingleStat("__t"+tempVarId.toString())[1];
-        var call = findDeepestCall(node);
-        node = replaceDeepestCall(node, newVar);
-        varStatements.push(parseSingleStat("var "+ deparse(newVar) + " = " + deparse(call) + ";"));
-        tempVarId++;
+    var paths = collectPaths(node, ['call']);
+
+    for (var i = 0, l = paths.length; i < l; i ++) {
+      var newVar = parseSingleStat("__t"+tempVarId.toString())[1];
+      var extractedNode = getNodeAtPath(node, paths[i]);
+      node = setNodeAtPathTo(node, paths[i], newVar);
+      varStatements.push(parseSingleStat("var "+ deparse(newVar) + " = " + deparse(extractedNode) + ";"));
+
+      tempVarId++;
     }
-    
+
+   
     varStatements.push(node);
     return varStatements;
 
 
 }
 
+var nodeType = function(node){
+  
+  return node[0]
+
+}
+
+var collectPaths = function(tree, nodeTypes){
+
+  var paths = [];
+
+  var inner = function(node, depth, path, position){
+  
+    if (typeof node === 'string'){
+      return;
+    }
+
+    if (node === null || node === undefined || node.length === 0){
+      return;
+    }
+  
+    if(nodeTypes.indexOf(nodeType(node)) > -1){
+      paths.push({ depth: depth, path:path.slice(0), position:position}) 
+    }
+
+    for (var i = 0; i < node.length; i++){
+      path.push(i)
+      inner(node[i], depth+1, path, position);
+      path.pop()
+    }
+  }
+
+  inner(tree, 0, [], 0);
+
+  paths.sort(function (v1, v2) {
+    // sort by reverse path
+    if(v1.depth > v2.depth) return -1;
+    if(v1.depth < v2.depth) return 1;
+    if (v1.depth == v2.depth){
+      // sort by left to right secondarily
+      if(v1.position < v2.position) return -1;
+      if(v1.position > v2.position) return 1;
+      return 0;
+    }
+  });
+
+  return paths.map(function (obj) {
+    return obj.path; 
+  });
+ 
+}
+
+var getNodeAtPath = function (node, path) {
+
+  if (path.length == 0){
+    return node
+  }
+
+  var tempNode = node;
+  for (var i = 0, l = path.length; i < l-1; i ++) {
+    tempNode = tempNode[path[i]];
+  }
+  return tempNode[path.slice(-1)[0]];
+  
+};
+
+// this function modifies the input, but also returns it in case it's given a path of []
+var setNodeAtPathTo = function (node, path, newNode) {
+  
+  if (path.length == 0){
+    return newNode;
+  }
+
+  var tempNode = node;
+  for (var i = 0, l = path.length; i < l-1; i ++) {
+    tempNode = tempNode[path[i]];
+  }
+  tempNode[path.slice(-1)[0]] = newNode;
+  return node;
+  
+};
 
 var numberOfCalls = function(tree){
 
@@ -317,97 +403,5 @@ var numberOfCalls = function(tree){
   
 }
 
-var replaceDeepestCall = function(tree, newVar){
-  return replaceCall(tree, newVar, findDepthOfDeepestCall(tree))
-}
-
-var findDeepestCall = function(node){
-  var deepestCallDepth = findDepthOfDeepestCall(node)
-
-  var call = undefined;
-
-  var findDeepestCallHelper = function (tree, depth) {
-
-    if (typeof tree === 'string' || tree === null || tree === undefined){
-      return false;
-    }
-    
-    for (var i = 0; i < tree.length; i++){
-      if(isNodeTypeOf(tree[i], "call") && depth+1 === deepestCallDepth){
-        call = tree[i];
-        return true;
-      }
-
-      if (findDeepestCallHelper(tree[i], depth + 1)){
-        break;
-      }
-
-    }
-  
-  };
-
-  findDeepestCallHelper([node], -1);
-  return call;
-}
-
-var findDepthOfDeepestCall = function(tree){
-
-  var findDepthOfDeepestCall = function (tree, depth, deepest) {
-
-     if (tree === null || tree == undefined){
-       return deepest;
-     }
-
-     if (typeof tree === 'string'){
-       if (tree == "call"){
-         if (depth > deepest){
-            deepest = depth-1;
-         }
-       }
-       return deepest;
-     }
-
-     var calldepths = []
-     for (var i = 0; i < tree.length; i++){
-      calldepths.push(findDepthOfDeepestCall(tree[i], depth + 1, deepest));
-     }
-     return Math.max.apply(null, calldepths);
-
-  };
-
-  return findDepthOfDeepestCall(tree, 0, -1);
-
-}
-
-
-var replaceCall = function(node, newVar, depthOfCall){
-
-  var replaceCall = function(tree, depth){
-
-    if (typeof tree === 'string' || tree === null || tree === undefined){
-      return false;
-    }
-    
-    for (var i = 0; i < tree.length; i++){
-      if(isNodeTypeOf(tree[i], "call") && depth+1 === depthOfCall){
-        tree[i] = newVar;
-        return true;
-      }
-
-     if(replaceCall(tree[i], depth+1)){
-       break;
-     }
-
-    }
-
-  }
-  node = [node];
-  replaceCall(node, -1);
-  return node[0];
-}
-
-
 exports.privateFunctions = { tacifyStatement : tacifyStatement, tacifyFor: tacifyFor, 
-                             tacifyWhile: tacifyWhile, replaceDeepestCall: replaceDeepestCall,
-                             findDepthOfDeepestCall: findDepthOfDeepestCall, findDeepestCall: findDeepestCall,
-                             replaceCall: replaceCall, spliceArrays: spliceArrays, convertIfElseToIf: convertIfElseToIf, isNodeTypeOf: isNodeTypeOf, numberOfCalls: numberOfCalls, convertSwitchToIfs: convertSwitchToIfs};
+                             tacifyWhile: tacifyWhile, spliceArrays: spliceArrays, convertIfElseToIf: convertIfElseToIf, isNodeTypeOf: isNodeTypeOf, numberOfCalls: numberOfCalls, convertSwitchToIfs: convertSwitchToIfs, collectPaths:collectPaths, setNodeAtPathTo:setNodeAtPathTo, getNodeAtPath: getNodeAtPath};

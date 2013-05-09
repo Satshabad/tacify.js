@@ -2,10 +2,9 @@ var assert = require('assert');
 
 
 var spliceArrays = require("../tacify").privateFunctions.spliceArrays;
-var replaceCall = require("../tacify").privateFunctions.replaceCall;
-var findDeepestCall = require("../tacify").privateFunctions.findDeepestCall;
-var replaceDeepestCall = require("../tacify").privateFunctions.replaceDeepestCall;
-var findDepthOfDeepestCall = require("../tacify").privateFunctions.findDepthOfDeepestCall;
+var setNodeAtPathTo = require("../tacify").privateFunctions.setNodeAtPathTo;
+var collectPaths = require("../tacify").privateFunctions.collectPaths;
+var getNodeAtPath = require("../tacify").privateFunctions.getNodeAtPath;
 var tacifyStatement = require("../tacify").privateFunctions.tacifyStatement;
 var tacifyWhile = require("../tacify").privateFunctions.tacifyWhile;
 var tacifyFor = require("../tacify").privateFunctions.tacifyFor;
@@ -294,6 +293,37 @@ suite("isTacifyed (test of a test helper)", function () {
 
 suite("Helpers", function () {
 
+  test('collectPaths should collect the paths of the node types', function () {
+
+    assert.deepEqual(collectPaths(parseSingleStat("foo().bar.baz();"), ['call']), [[1,1,1,1], [1]]);
+
+  });
+
+  test('setNodeAtPathTo should alter the node at the path given', function () {    
+    var node = parseSingleStat("foo().bar.baz();")
+    setNodeAtPathTo(node , [1,1,1,1], ['call',['name', 'bing'], []])
+
+    assert.deepEqual(node, parseSingleStat("bing().bar.baz();"));
+
+  });
+
+  test('getNodeAtPath should return node at the path given', function () {    
+    var node = parseSingleStat("foo().bar.baz();")
+
+    assert.deepEqual(getNodeAtPath(node, [1,1,1,1]), ['call',['name', 'foo'], []])
+
+  });
+
+ test('getNodeAtPath should return orginal node at empty path', function () {    
+    var node = parseSingleStat("foo().bar.baz();")
+
+    assert.deepEqual(getNodeAtPath(node, []), parseSingleStat("foo().bar.baz();"));
+
+  });
+
+
+
+
   test('numberOfCalls should count the number of calls in a node', function () {
 
     assert.equal(numberOfCalls(parseSingleStat("foo().bar.baz();")), 2);
@@ -305,67 +335,6 @@ suite("Helpers", function () {
 
     assert.equal(numberOfCalls(parseSingleStat("x = 4")), 0);
 
-  });
-
-  test('replaceCall should replace call at specified level with new node', function () {
-
-    assert.deepEqual(replaceCall(parseSingleStat("foo().bar.baz();"), ["name", "__t0"], 4),
-                     parseSingleStat("__t0.bar.baz();"));
-
-  });
-
-  test('replaceCall should handle single call cases', function () {
-
-      assert.deepEqual(replaceCall(parseSingleStat("foo();")[1] ,["name", "__t0"], 0), 
-                   parseSingleStat("__t0")[1]);
-
-  });
-
-  test('findDepthOfDeepestCall should return depth of deepest call node', function () {
-
-    assert.deepEqual(findDepthOfDeepestCall(parseSingleStat("foo().bar.baz();")), 4);
-
-  });
-
-  test('findDeepestCall should return the deepest call node', function () {
-
-    assert.deepEqual(findDeepestCall(parseSingleStat("foo().bar.baz();")),
-                     parseSingleStat("foo()")[1]);
-
-  });
-
-  test('findDeepestCall should handle single call cases', function () {
-
-      assert.deepEqual(findDeepestCall(parseSingleStat("foo();")), 
-                   parseSingleStat("foo();")[1]);
-
-    });
-
-
-  suite("replaceDeepestCall", function () {
-
-    test('should replace the deepest call node with the given one', function () {
-
-      assert.deepEqual(replaceDeepestCall(parseSingleStat("foo().bar.baz();") ,["name", "__t0"]), 
-                   parseSingleStat("__t0.bar.baz()"));
-
-    });
-
-    test('should handle single call cases', function () {
-
-      assert.deepEqual(replaceDeepestCall(parseSingleStat("foo();") ,["name", "__t0"]), 
-                   parseSingleStat("__t0"));
-
-    });
-
-
-    test('should handle proper order of arguments', function () {
-
-      assert.deepEqual(replaceDeepestCall(parseSingleStat("foo(baz(), x, bar())"),["name", "__t0"]), 
-                   parseSingleStat("foo(__t0, x, bar())"));
-
-    });
-   
   });
 
   test("spliceArrays should put all the elements of an array into another array", function () {
@@ -630,6 +599,27 @@ suite("Switch Statements", function () {
 
     assert.deepEqual(convertSwitchToIfs(input), expected)
   });
+
+
+});
+
+
+
+
+suite("Object Literals", function () {
+
+  test("tacify statement should extract object literals",function () {
+    
+    var context = {bar : function(){return 2}, foo: function(){ return 2}, baz: function(x){return x}}
+    var input = heredoc(function () {/*
+         x = foo({x:1}) 
+   */ })
+    var result = tacify(parse(input));
+    assert.ok(isTacified(result));
+    assert.ok(isEquivalentCodeWithContext(input, deparse(result), context));
+
+  });
+
 
 
 });

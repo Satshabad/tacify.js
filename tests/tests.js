@@ -5,12 +5,12 @@ var spliceArrays = require("../tacify").privateFunctions.spliceArrays;
 var setNodeAtPathTo = require("../tacify").privateFunctions.setNodeAtPathTo;
 var collectPaths = require("../tacify").privateFunctions.collectPaths;
 var getNodeAtPath = require("../tacify").privateFunctions.getNodeAtPath;
+var numberOfNodes = require("../tacify").privateFunctions.numberOfNodes;
 var tacifyStatement = require("../tacify").privateFunctions.tacifyStatement;
 var tacifyWhile = require("../tacify").privateFunctions.tacifyWhile;
 var tacifyFor = require("../tacify").privateFunctions.tacifyFor;
 var convertIfElseToIf = require("../tacify").privateFunctions.convertIfElseToIf;
 var isNodeTypeOf = require("../tacify").privateFunctions.isNodeTypeOf;
-var numberOfCalls = require("../tacify").privateFunctions.numberOfCalls;
 var convertSwitchToIfs = require("../tacify").privateFunctions.convertSwitchToIfs;
 var tacify = require("../tacify").tacify;
 var parser = require('../parser');
@@ -31,7 +31,7 @@ var isEquivalentCodeWithContext = function (beforeCode, afterCode, context) {
     if (typeof context[prop] === "function"){
       functionDefs.push('var ' + prop + '=' + context[prop].toString())
       delete context[prop]
-    }
+   }
   }
 
   for (var i = 0, l = functionDefs.length; i < l; i ++) {
@@ -103,7 +103,7 @@ var isTacified = function (node) {
 
     if (isNodeTypeOf(node, 'stat')){
 
-      if (numberOfCalls(node) > 1){
+      if (numberOfNodes(node, "call") > 1){
         isTacified = false;
       }
 
@@ -111,14 +111,14 @@ var isTacified = function (node) {
 
     if(isNodeTypeOf(node, 'var')){
 
-      if (numberOfCalls(node) > 1){
+      if (numberOfNodes(node, "call") > 1){
         isTacified = false;
       }
     }
       
     if (isNodeTypeOf(node, 'if')){
 
-      if (numberOfCalls(node[1]) > 1){
+      if (numberOfNodes(node[1], "call") > 1){
         isTacified = false;
       }
       
@@ -135,15 +135,15 @@ var isTacified = function (node) {
 
     if (isNodeTypeOf(node, 'for')){
 
-      if (numberOfCalls(node[1]) > 0){
+      if (numberOfNodes(node[1], "call") > 0){
         isTacified = false;
       }
 
-      if (numberOfCalls(node[2]) > 0){
+      if (numberOfNodes(node[2], "call") > 0){
         isTacified = false;
       }
 
-      if (numberOfCalls(node[3]) > 0){
+      if (numberOfNodes(node[3], "call") > 0){
         isTacified = false;
       }
 
@@ -152,7 +152,7 @@ var isTacified = function (node) {
 
     if (isNodeTypeOf(node, 'while')){
 
-      if (numberOfCalls(node[1]) > 0){
+      if (numberOfNodes(node[1], "call") > 0){
         isTacified = false;
       }
 
@@ -324,16 +324,16 @@ suite("Helpers", function () {
 
 
 
-  test('numberOfCalls should count the number of calls in a node', function () {
+  test('numberOfNodes should count the number of calls in a node', function () {
 
-    assert.equal(numberOfCalls(parseSingleStat("foo().bar.baz();")), 2);
+    assert.equal(numberOfNodes(parseSingleStat("foo().bar.baz();"), "call"), 2);
 
   });
 
 
-  test('numberOfCalls should return 0 when there are no calls', function () {
+  test('numberOfNodes should return 0 when there are no calls', function () {
 
-    assert.equal(numberOfCalls(parseSingleStat("x = 4")), 0);
+    assert.equal(numberOfNodes(parseSingleStat("x = 4"), "call"), 0);
 
   });
 

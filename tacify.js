@@ -376,7 +376,7 @@ var setNodeAtPathTo = function (node, path, newNode) {
   
 };
 
-var numberOfCalls = function(tree){
+var numberOfNodes = function(tree, nodeType){
 
   var callCount = 0;
 
@@ -387,7 +387,7 @@ var numberOfCalls = function(tree){
     }
   
     if (typeof tree === 'string'){
-      if (tree == "call"){
+      if (tree == nodeType){
           callCount = callCount+1;
       }
       return;
@@ -404,4 +404,4 @@ var numberOfCalls = function(tree){
 }
 
 exports.privateFunctions = { tacifyStatement : tacifyStatement, tacifyFor: tacifyFor, 
-                             tacifyWhile: tacifyWhile, spliceArrays: spliceArrays, convertIfElseToIf: convertIfElseToIf, isNodeTypeOf: isNodeTypeOf, numberOfCalls: numberOfCalls, convertSwitchToIfs: convertSwitchToIfs, collectPaths:collectPaths, setNodeAtPathTo:setNodeAtPathTo, getNodeAtPath: getNodeAtPath};
+                             tacifyWhile: tacifyWhile, spliceArrays: spliceArrays, convertIfElseToIf: convertIfElseToIf, isNodeTypeOf: isNodeTypeOf, convertSwitchToIfs: convertSwitchToIfs, collectPaths:collectPaths, setNodeAtPathTo:setNodeAtPathTo, getNodeAtPath: getNodeAtPath, numberOfNodes: numberOfNodes};

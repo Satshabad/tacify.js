@@ -162,7 +162,7 @@ var tacifyWhile = function (node) {
   var tempVarId = 0;
   var conditional = node[1];
 
-  var paths = collectPaths(conditional, ['call'])
+  var paths = collectPaths(conditional, ['call', 'object'])
 
   for (var i = 0, l = paths.length; i < l; i ++) {
     var newVar = parseSingleStat("__t"+tempVarId.toString())[1];
@@ -203,7 +203,7 @@ var tacifyFor = function (node) {
   var tempVarId = 0;
   var conditionals = [node[1], node[2], node[3]];
 
-  var paths = collectPaths(conditionals[0], ['call'])
+  var paths = collectPaths(conditionals[0], ['call', 'object'])
 
   for (var i = 0, l = paths.length; i < l; i ++) {
     var newVar = parseSingleStat("__t"+tempVarId.toString())[1];
@@ -213,7 +213,7 @@ var tacifyFor = function (node) {
     tempVarId++;
   }
 
-  paths = collectPaths(conditionals[1], ['call'])
+  paths = collectPaths(conditionals[1], ['call', 'object'])
 
   for (var i = 0, l = paths.length; i < l; i ++) {
     var newVar = parseSingleStat("__t"+tempVarId.toString())[1];
@@ -224,7 +224,7 @@ var tacifyFor = function (node) {
 
   }
 
-  paths = collectPaths(conditionals[2], ['call'])
+  paths = collectPaths(conditionals[2], ['call', 'object'])
 
   for (var i = 0, l = paths.length; i < l; i ++) {
     var newVar = parseSingleStat("__t"+tempVarId.toString())[1];
@@ -277,7 +277,7 @@ var tacifyStatement = function(node){
     var varStatements = [];
     var tempVarId = 0;
 
-    var paths = collectPaths(node, ['call']);
+    var paths = collectPaths(node, ['call', 'object']);
 
     for (var i = 0, l = paths.length; i < l; i ++) {
       var newVar = parseSingleStat("__t"+tempVarId.toString())[1];

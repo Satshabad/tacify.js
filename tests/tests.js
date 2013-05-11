@@ -103,7 +103,7 @@ var isTacified = function (node) {
 
     if (isNodeTypeOf(node, 'stat')){
 
-      if (numberOfNodes(node, "call") > 1){
+      if (numberOfNodes(node, "call") + numberOfNodes(node, "object") > 1){
         isTacified = false;
       }
 
@@ -111,17 +111,18 @@ var isTacified = function (node) {
 
     if(isNodeTypeOf(node, 'var')){
 
-      if (numberOfNodes(node, "call") > 1){
+      if (numberOfNodes(node, "call")+numberOfNodes(node, "object") > 1){
         isTacified = false;
       }
+      
     }
       
     if (isNodeTypeOf(node, 'if')){
 
-      if (numberOfNodes(node[1], "call") > 1){
+      if (numberOfNodes(node[1], "call") + numberOfNodes(node[1], "object") > 1){
         isTacified = false;
       }
-      
+
       // and if-else is not in tac form
       if (isNodeTypeOf(node[3], 'if')){
         isTacified = false;
@@ -139,11 +140,23 @@ var isTacified = function (node) {
         isTacified = false;
       }
 
+      if (numberOfNodes(node[1], "object") > 0){
+        isTacified = false;
+      }
+
       if (numberOfNodes(node[2], "call") > 0){
         isTacified = false;
       }
 
+      if (numberOfNodes(node[2], "object") > 0){
+        isTacified = false;
+      }
+
       if (numberOfNodes(node[3], "call") > 0){
+        isTacified = false;
+      }
+
+      if (numberOfNodes(node[3], "object") > 0){
         isTacified = false;
       }
 
@@ -153,6 +166,10 @@ var isTacified = function (node) {
     if (isNodeTypeOf(node, 'while')){
 
       if (numberOfNodes(node[1], "call") > 0){
+        isTacified = false;
+      }
+
+      if (numberOfNodes(node[1], "object") > 0){
         isTacified = false;
       }
 
